@@ -2,9 +2,13 @@
 
 import os
 import urllib.request
+import warnings
 from pathlib import Path
 
-import galah
+with warnings.catch_warnings():
+    # galah-python has invalid escape sequences; the SyntaxWarning prints the local install path.
+    warnings.simplefilter("ignore", SyntaxWarning)
+    import galah
 import geopandas as gpd
 from dotenv import load_dotenv
 

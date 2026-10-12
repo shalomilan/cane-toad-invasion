@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cane Toad Invasion</title>
+<meta name="description" content="Cane toad invasion in Australia: what happened vs what a colonisation model predicted, 1935-2035.">
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --text: #1f1d1a; --muted: #6b665e; --border: #e3dfd7;
+  --land: #ece8df; --baseline: #a7a29a; --accent: #8c2981; --band: rgba(140, 41, 129, 0.18);
+  --band-alt: rgba(33, 120, 160, 0.18); --alt: #2178a0; --ink: #2c115f; --ramp-reverse: 0;
+  --z0: #e3c98f; --z1: #ecdcb5; --z2: #cfe0bf; --z3: #c4d4e8; --z4: #d9e8cc; --river: #2f7fc1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161514; --surface: #201f1d; --text: #ece9e3; --muted: #a39e95; --border: #34322e;
+    --land: #2e2c29; --baseline: #6e6a63; --accent: #d065c4; --band: rgba(208, 101, 196, 0.22);
+    --band-alt: rgba(90, 170, 210, 0.22); --alt: #5aaad2; --ink: #fcfdbf; --ramp-reverse: 1;
+    --z0: #6b5530; --z1: #574b35; --z2: #34462d; --z3: #2e3b4d; --z4: #3a4834; --river: #5fb0f0;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161514; --surface: #201f1d; --text: #ece9e3; --muted: #a39e95; --border: #34322e;
+  --land: #2e2c29; --baseline: #6e6a63; --accent: #d065c4; --band: rgba(208, 101, 196, 0.22);
+  --band-alt: rgba(90, 170, 210, 0.22); --alt: #5aaad2; --ink: #fcfdbf; --ramp-reverse: 1;
+  --z0: #6b5530; --z1: #574b35; --z2: #34462d; --z3: #2e3b4d; --z4: #3a4834; --river: #5fb0f0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 1.6rem; margin: 0 0 4px; }
+h2 { font-size: 1rem; margin: 0 0 8px; }
+p { margin: 0 0 8px; }
+.muted { color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin: 16px 0 10px; }
+.year { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.2em; }
+#slider { flex: 1 1 260px; accent-color: var(--accent); }
+button, select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.phase { margin-bottom: 14px; padding: 10px 14px; border-left: 4px solid var(--accent); }
+.maps { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.map canvas { width: 100%; height: auto; display: block; }
+.map { position: relative; }
+.overlay { position: absolute; inset: 44px 14px 14px; display: flex; align-items: center; justify-content: center;
+  text-align: center; color: var(--muted); font-weight: 600; pointer-events: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; font-size: 0.85rem; color: var(--muted); margin: 10px 0 16px; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+.ramp { display: inline-block; width: 120px; height: 10px; border-radius: 2px; vertical-align: 0; margin: 0 4px; }
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+.metric .row { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.metric .value { font-weight: 600; text-align: right; }
+.metric .interval { font-size: 0.8rem; color: var(--muted); text-align: right; }
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+svg text { fill: var(--muted); font-size: 11px; }
+footer { margin-top: 24px; font-size: 0.85rem; color: var(--muted); }
+footer li { margin-bottom: 4px; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+#theme { font-size: 1.2rem; line-height: 1; padding: 6px 10px; flex: none; }
+button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.zones { display: none; }
+.zones.on { display: flex; }
+label.check { font-size: 0.9rem; color: var(--muted); cursor: pointer; }
+@media (max-width: 720px) {
+  .maps, .charts, .metrics { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="header"><h1>Cane toad invasion: reality vs model</h1><button id="theme" type="button" aria-label="Switch light or dark mode" title="Switch light or dark mode"></button></div>
+  <p class="muted">Each square is a 25 × 25 km cell. Left: where toads were actually recorded. Right: the probability that a cell has toad records, from a colonisation model that only saw data up to its start year.</p>
+
+  <div class="controls">
+    <span class="year" id="yearLabel"></span>
+    <button id="play" type="button">Play</button>
+    <input id="slider" type="range" aria-label="Year">
+    <select id="scenario" aria-label="Climate scenario">
+      <option value="observed niche">Observed niche (conservative)</option>
+      <option value="expanded niche">Expanded niche (native + Australian records)</option>
+    </select>
+    <button id="zonesButton" type="button" aria-pressed="false">Climate zones and rivers</button>
+  </div>
+
+  <div class="card phase" id="phase"></div>
+
+  <div class="maps">
+    <div class="card map"><h2>Reality</h2><canvas id="realityMap"></canvas><div class="overlay" id="realityOverlay"></div></div>
+    <div class="card map"><h2 id="modelTitle">Model</h2><canvas id="modelMap"></canvas><div class="overlay" id="modelOverlay"></div></div>
+  </div>
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--baseline)"></span><span id="baselineLabel"></span></span>
+    <span><span class="swatch" style="background:var(--ink)"></span>Recorded after that year</span>
+    <span>Model probability: 1%<span class="ramp" id="ramp"></span>100%</span>
+    <span><span class="swatch" style="border:1.5px solid var(--text)"></span>Pilbara (arid barrier)</span>
+  </div>
+  <div class="legend zones" id="zonesLegend">
+    <span><span class="swatch" style="background:var(--z0)"></span>Desert (BW)</span>
+    <span><span class="swatch" style="background:var(--z1)"></span>Semi-arid (BS)</span>
+    <span><span class="swatch" style="background:var(--z2)"></span>Humid, summer rain</span>
+    <span><span class="swatch" style="background:var(--z3)"></span>Humid, winter rain</span>
+    <span><span class="swatch" style="background:var(--z4)"></span>Humid, year-round rain</span>
+    <span><span class="swatch" style="background:var(--river);height:3px;vertical-align:3px"></span>Rivers (mean flow ≥ 20 m³/s)</span>
+    <span>Köppen arid classes (Peel et al. 2007) from WorldClim; rivers from HydroRIVERS</span>
+  </div>
+  <div class="legend" style="margin-top:0">
+    <label class="check"><input type="checkbox" id="outline"> Outline real new records on the model map</label>
+  </div>
+
+  <div class="metrics">
+    <div class="card metric"><h2>Occupied area</h2><div id="mArea"></div></div>
+    <div class="card metric"><h2>Western front: km advanced</h2><div id="mFront"></div></div>
+    <div class="card metric"><h2>Toads in the Pilbara</h2><div id="mPilbara"></div></div>
+  </div>
+
+  <div class="charts">
+    <div class="card"><h2>Occupied area (thousand km²)</h2><svg id="areaChart" viewBox="0 0 480 220" width="100%"></svg></div>
+    <div class="card"><h2 id="frontChartTitle">Western front: km advanced</h2><svg id="frontChart" viewBox="0 0 480 220" width="100%"></svg></div>
+  </div>
+  <p class="legend" style="margin-top:8px">
+    <span><span class="swatch" style="background:var(--text)"></span>Observed</span>
+    <span><span class="swatch" style="background:var(--alt)"></span>Backtest: model trained with data up to 2015</span>
+    <span><span class="swatch" style="background:var(--accent)"></span>Forecast: model trained with data up to 2025</span>
+    <span>Shaded: 90% of simulations</span>
+  </p>
+
+  <footer>
+    <h2>How to read it</h2>
+    <ul>
+      <li><strong>"Occupied" means "has toad records".</strong> Survey effort grew about 15-fold after 2017 (FrogID), so many cells behind the front got their first record late. That is why the model underestimates the number of new cells while placing the front well.</li>
+      <li><strong>The slowdown at the Pilbara is an extrapolation.</strong> The toad has never met that desert, so no data can validate it yet. The two scenarios bracket how much we don't know about its climatic limits.</li>
+      <li>The western front is the third westernmost occupied cell west of 141°E; its advance is measured from its position in the first year with at least three occupied cells west of 141°E.</li>
+      <li>Records for 2025 are probably incomplete (upload lag in the Atlas of Living Australia).</li>
+    </ul>
+    <p>Data: Atlas of Living Australia, GBIF, WorldClim 2.1, HydroRIVERS. Model: discrete-time survival (logistic regression) on a cell × year table, simulated 50 (backtest) and 200 (forecast) times. <a href="https://github.com/shalomilan/cane-toad-invasion" style="color:var(--accent)">Code and notebooks</a>.</p>
+  </footer>
+</main>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+const n = DATA.cx.length;
+const decode = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+const prob = {};
+for (const [scenario, periods] of Object.entries(DATA.prob)) {
+  prob[scenario] = { backtest: decode(periods.backtest), forecast: decode(periods.forecast) };
+}
+const firstYear = DATA.first_year;
+const BACKTEST_START = 2016, FORECAST_START = 2026, LAST_OBSERVED = 2025;
+
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const RAMP = ["#fcfdbf", "#feb078", "#f1605d", "#b5367a", "#721f81", "#2c115f"].map((h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)));
+let rampReverse = false;
+function rampColor(p) {
+  const q = Math.min(Math.max(p, 0), 1);
+  const t = (rampReverse ? 1 - q : q) * (RAMP.length - 1);
+  const i = Math.min(Math.floor(t), RAMP.length - 2), f = t - i;
+  const c = RAMP[i].map((v, k) => Math.round(v + f * (RAMP[i + 1][k] - v)));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+function updateRamp() {
+  rampReverse = css("--ramp-reverse") === "1";
+  document.getElementById("ramp").style.background =
+    `linear-gradient(to right, ${[0, 0.2, 0.4, 0.6, 0.8, 1].map(rampColor).join(",")})`;
+}
+
+const minX = Math.min(...DATA.cx), maxX = Math.max(...DATA.cx);
+const minY = Math.min(...DATA.cy), maxY = Math.max(...DATA.cy);
+const CELL = 4;
+const W = (maxX - minX + 1) * CELL, H = (maxY - minY + 1) * CELL;
+
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+const realityCtx = setupCanvas(document.getElementById("realityMap"));
+const modelCtx = setupCanvas(document.getElementById("modelMap"));
+const px = (i) => (DATA.cx[i] - minX) * CELL;
+const py = (i) => (maxY - DATA.cy[i]) * CELL;
+
+function drawPilbara(ctx) {
+  const b = DATA.pilbara_box;
+  ctx.strokeStyle = css("--text"); ctx.lineWidth = 1.5;
+  ctx.strokeRect((b[0] - minX) * CELL, (maxY - b[3]) * CELL, (b[2] - b[0] + 1) * CELL, (b[3] - b[1] + 1) * CELL);
+}
+
+let showZones = false;
+function drawRivers(ctx) {
+  ctx.strokeStyle = css("--river"); ctx.lineWidth = 1.2; ctx.lineJoin = "round";
+  for (const line of DATA.rivers) {
+    ctx.beginPath();
+    for (let k = 0; k < line.length; k += 2) {
+      const x = (line[k] - minX) * CELL, y = (maxY + 1 - line[k + 1]) * CELL;
+      if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+function phaseOf(year) {
+  if (year < BACKTEST_START) return "history";
+  if (year < FORECAST_START) return "backtest";
+  return "forecast";
+}
+const baselineOf = (year) => (phaseOf(year) === "history" ? year : phaseOf(year) === "backtest" ? 2015 : 2025);
+
+function drawMaps(year, scenario) {
+  const phase = phaseOf(year), baseline = baselineOf(year);
+  const land = css("--land"), grey = css("--baseline"), ink = css("--ink");
+  const zoneColours = [0, 1, 2, 3, 4].map((z) => css(`--z${z}`));
+  const landOf = (i) => (showZones ? zoneColours[DATA.zone[i]] : land);
+  const observedUntil = Math.min(year, LAST_OBSERVED);
+  const probs = phase === "history" ? null : prob[scenario][phase];
+  const offset = phase === "backtest" ? (year - BACKTEST_START) * n : (year - FORECAST_START) * n;
+  const outline = document.getElementById("outline").checked;
+
+  for (const ctx of [realityCtx, modelCtx]) { ctx.clearRect(0, 0, W, H); }
+  for (let i = 0; i < n; i++) {
+    const x = px(i), y = py(i), fy = firstYear[i];
+    let real = landOf(i);
+    if (fy && fy <= baseline) real = phase === "history" ? ink : grey;
+    else if (fy && fy <= observedUntil) real = ink;
+    realityCtx.fillStyle = real; realityCtx.fillRect(x, y, CELL, CELL);
+
+    let model = landOf(i);
+    if (fy && fy <= baseline) model = phase === "history" ? ink : grey;
+    else if (probs) { const p = probs[offset + i] / 255; if (p >= 0.01) model = rampColor(p); }
+    modelCtx.fillStyle = model; modelCtx.fillRect(x, y, CELL, CELL);
+  }
+  if (outline && phase === "backtest") {
+    modelCtx.strokeStyle = css("--text"); modelCtx.lineWidth = 0.8;
+    for (let i = 0; i < n; i++) {
+      const fy = firstYear[i];
+      if (fy && fy > baseline && fy <= year) modelCtx.strokeRect(px(i) + 0.4, py(i) + 0.4, CELL - 0.8, CELL - 0.8);
+    }
+  }
+  if (showZones) { drawRivers(realityCtx); drawRivers(modelCtx); }
+  drawPilbara(realityCtx); drawPilbara(modelCtx);
+
+  document.getElementById("realityOverlay").textContent = phase === "forecast" ? "Not observed yet (showing 2025)" : "";
+  document.getElementById("modelOverlay").textContent = phase === "history" ? "Training period: the model starts predicting in 2016" : "";
+  document.getElementById("modelTitle").textContent =
+    phase === "history" ? "Model" : `Model: P(occupied by ${year}), trained with data up to ${baseline}`;
+  document.getElementById("baselineLabel").textContent =
+    phase === "history" ? "Recorded by this year" : `Recorded by ${baseline} (the model's starting point)`;
+}
+
+const PHASES = {
+  history: "<strong>History (1935–2015).</strong> Toads were released in Queensland in 1935. These years are the model's training data, so there is nothing to compare yet.",
+  backtest: "<strong>Backtest (2016–2025): reality vs model.</strong> The model was trained only with data up to 2015 and simulated the invasion year by year. Compare the two maps: did it put the probability where toads actually appeared?",
+  forecast: "<strong>Forecast (2026–2035).</strong> The same model, retrained with all data up to 2025. Nothing to compare with yet: this is the prediction.",
+};
+
+const summary = {};
+for (const row of DATA.summary) summary[`${row.scenario}|${row.year}`] = row;
+const observed = {};
+for (const row of DATA.observed) observed[row.year] = row;
+const fmtArea = (km2) => `${Math.round(km2 / 1000).toLocaleString("en-US")}k km²`;
+const advance = (x) => Math.max(0, DATA.front_start_x - x);
+const fmtFront = (x) => (x == null ? "—" : `${Math.round(advance(x)).toLocaleString("en-US")} km`);
+document.getElementById("frontChartTitle").textContent = `Western front: km advanced since ${DATA.front_start_year}`;
+const fmtP = (p) => (p < 0.01 ? "<1%" : `${Math.round(p * 100)}%`);
+
+function metricRows(rows) {
+  return rows.map(([label, value, interval]) =>
+    `<div class="row"><span class="muted">${label}</span><span><div class="value">${value}</div>${interval ? `<div class="interval">${interval}</div>` : ""}</span></div>`
+  ).join("");
+}
+
+function drawMetrics(year, scenario) {
+  const obs = year <= LAST_OBSERVED ? observed[year] : null;
+  const sim = summary[`${scenario}|${year}`];
+  const label = phaseOf(year) === "forecast" ? "Forecast" : "Model (backtest)";
+  const realArea = obs ? fmtArea(obs.area) : "—", realFront = obs ? fmtFront(obs.front_x) : "—";
+  const realPilbara = obs ? (obs.pilbara ? "Yes" : "No") : "—";
+  document.getElementById("mArea").innerHTML = metricRows([
+    ["Reality", realArea],
+    ...(sim ? [[label, fmtArea(sim.area_median), `90%: ${fmtArea(sim.area_p5)} – ${fmtArea(sim.area_p95)}`]] : []),
+  ]);
+  document.getElementById("mFront").innerHTML = metricRows([
+    ["Reality", realFront],
+    ...(sim ? [[label, fmtFront(sim.front_x_median), `90%: ${fmtFront(sim.front_x_p95)} – ${fmtFront(sim.front_x_p5)}`]] : []),
+  ]);
+  document.getElementById("mPilbara").innerHTML = metricRows([
+    ["Reality: any record?", realPilbara],
+    ...(sim ? [[`${label}: probability`, fmtP(sim.p_pilbara)]] : []),
+  ]);
+}
+
+function lineChart(svgId, series, yLabelFmt, year, xMin) {
+  const svg = document.getElementById(svgId);
+  const L = 46, R = 470, T = 10, B = 196, xMax = 2035;
+  const values = series.flatMap((s) => s.points.flatMap((p) => [p.y, p.lo, p.hi])).filter((v) => v != null);
+  let yMin = Math.min(...values), yMax = Math.max(...values);
+  const pad = (yMax - yMin) * 0.05; yMin = Math.max(0, yMin - pad); yMax += pad;
+  const sx = (x) => L + ((x - xMin) / (xMax - xMin)) * (R - L);
+  const sy = (y) => B - ((y - yMin) / (yMax - yMin)) * (B - T);
+  let out = "";
+  const ticks = 4;
+  for (let k = 0; k <= ticks; k++) {
+    const v = yMin + ((yMax - yMin) * k) / ticks;
+    out += `<line x1="${L}" x2="${R}" y1="${sy(v)}" y2="${sy(v)}" stroke="${css("--border")}"/>`;
+    out += `<text x="${L - 6}" y="${sy(v) + 4}" text-anchor="end">${yLabelFmt(v)}</text>`;
+  }
+  for (let x = Math.ceil(xMin / 10) * 10; x <= xMax; x += 10) {
+    out += `<text x="${sx(x)}" y="${B + 16}" text-anchor="middle">${x}</text>`;
+  }
+  for (const s of series) {
+    const band = s.points.filter((p) => p.lo != null);
+    if (band.length) {
+      const upper = band.map((p) => `${sx(p.x)},${sy(p.hi)}`);
+      const lower = band.slice().reverse().map((p) => `${sx(p.x)},${sy(p.lo)}`);
+      out += `<polygon points="${upper.concat(lower).join(" ")}" fill="${s.band}"/>`;
+    }
+    const line = s.points.filter((p) => p.y != null).map((p) => `${sx(p.x)},${sy(p.y)}`).join(" ");
+    out += `<polyline points="${line}" fill="none" stroke="${s.color}" stroke-width="2"/>`;
+  }
+  out += `<line x1="${sx(year)}" x2="${sx(year)}" y1="${T}" y2="${B}" stroke="${css("--text")}" stroke-dasharray="3 3"/>`;
+  svg.innerHTML = out;
+}
+
+function drawCharts(year, scenario) {
+  const simSeries = (period, color, band, key) => ({
+    color, band,
+    points: DATA.summary.filter((r) => r.scenario === scenario && r.period === period)
+      .map((r) => ({ x: r.year, y: key(r, "median"), lo: key(r, "p5"), hi: key(r, "p95") })),
+  });
+  const area = (r, q) => r[`area_${q}`] / 1000;
+  const front = (r, q) => advance(r[`front_x_${q}`]);
+  const observedSeries = (key, xMin) => ({
+    color: css("--text"), band: "none",
+    points: DATA.observed.filter((r) => r.year >= xMin && key(r) != null).map((r) => ({ x: r.year, y: key(r) })),
+  });
+  lineChart("areaChart", [
+    simSeries("backtest", css("--alt"), css("--band-alt"), area),
+    simSeries("forecast", css("--accent"), css("--band"), area),
+    observedSeries((r) => r.area / 1000, 1980),
+  ], (v) => Math.round(v), Math.max(year, 1980), 1980);
+  lineChart("frontChart", [
+    simSeries("backtest", css("--alt"), css("--band-alt"), front),
+    simSeries("forecast", css("--accent"), css("--band"), front),
+    observedSeries((r) => (r.front_x == null ? null : advance(r.front_x)), DATA.front_start_year),
+  ], (v) => Math.round(v), Math.max(year, DATA.front_start_year), DATA.front_start_year);
+}
+
+const slider = document.getElementById("slider");
+slider.min = DATA.first_year_min; slider.max = 2035; slider.value = 2025;
+const scenarioSelect = document.getElementById("scenario");
+
+function render() {
+  const year = Number(slider.value), scenario = scenarioSelect.value;
+  updateRamp();
+  document.getElementById("yearLabel").textContent = year;
+  document.getElementById("phase").innerHTML = PHASES[phaseOf(year)];
+  drawMaps(year, scenario); drawMetrics(year, scenario); drawCharts(year, scenario);
+}
+
+let timer = null;
+document.getElementById("play").addEventListener("click", (event) => {
+  if (timer) { clearInterval(timer); timer = null; event.target.textContent = "Play"; return; }
+  if (Number(slider.value) >= 2035) slider.value = 1990;
+  event.target.textContent = "Pause";
+  timer = setInterval(() => {
+    if (Number(slider.value) >= 2035) { clearInterval(timer); timer = null; event.target.textContent = "Play"; return; }
+    slider.value = Number(slider.value) + 1; render();
+  }, 450);
+});
+slider.addEventListener("input", render);
+scenarioSelect.addEventListener("change", render);
+document.getElementById("outline").addEventListener("change", render);
+document.getElementById("zonesButton").addEventListener("click", (event) => {
+  showZones = !showZones;
+  event.target.setAttribute("aria-pressed", String(showZones));
+  document.getElementById("zonesLegend").classList.toggle("on", showZones);
+  render();
+});
+const themeButton = document.getElementById("theme");
+const isDark = () => css("--ramp-reverse") === "1";
+function setTheme(theme) {
+  if (theme) document.documentElement.setAttribute("data-theme", theme);
+  themeButton.textContent = isDark() ? "\u2600\uFE0F" : "\u{1F319}";
+}
+try { setTheme(localStorage.getItem("theme")); } catch (e) { setTheme(null); }
+themeButton.addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  setTheme(next);
+  try { localStorage.setItem("theme", next); } catch (e) {}
+  render();
+});
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+render();
+</script>
+</body>
+</html>
