@@ -26,7 +26,40 @@ BIOCLIM_VARIABLES = {
     "bio15": "precip_seasonality",
     "bio17": "precip_driest_quarter",
 }
+SEASONAL_PRECIP_VARIABLES = {
+    "bio18": "precip_warmest_quarter",
+    "bio19": "precip_coldest_quarter",
+}
 MIN_RIVER_DISCHARGE_M3S = 1.0
+
+
+def climate_zone(table: pd.DataFrame) -> pd.Series:
+    """Köppen arid classes (Peel et al. 2007) plus rainfall seasonality for non-arid cells.
+
+    Arid threshold (mm) = 20 * mean annual temperature + 280 if >= 70% of rain falls in summer,
+    + 0 if >= 70% falls in winter, + 140 otherwise. Desert if rain < threshold / 2.
+    The summer half-year share is approximated from the warmest and coldest quarters.
+    """
+    annual = table["annual_precip"]
+    middle_quarters = annual - table["precip_warmest_quarter"] - table["precip_coldest_quarter"]
+    summer_share = (table["precip_warmest_quarter"] + middle_quarters / 2) / annual
+    threshold = 20 * table["annual_mean_temp"] + np.select(
+        [summer_share >= 0.7, summer_share <= 0.3], [280, 0], default=140
+    )
+    return pd.Series(
+        np.select(
+            [annual < threshold / 2, annual < threshold, summer_share >= 0.6, summer_share <= 0.4],
+            ["Desert (BW)", "Semi-arid (BS)", "Humid, summer rain", "Humid, winter rain"],
+            default="Humid, year-round rain",
+        ),
+        index=table.index,
+    )
+
+
+def major_rivers(min_discharge_m3s: float) -> gpd.GeoDataFrame:
+    shapefile = next(n for n in zipfile.ZipFile(HYDRORIVERS_ZIP).namelist() if n.endswith(".shp"))
+    rivers = gpd.read_file(f"zip://{HYDRORIVERS_ZIP.as_posix()}!{shapefile}", bbox=(112, -44, 154, -10))
+    return rivers.loc[rivers["DIS_AV_CMS"] >= min_discharge_m3s, ["DIS_AV_CMS", "geometry"]].to_crs(AUSTRALIAN_ALBERS)
 
 
 def australia_grid(cell_size_m: float) -> gpd.GeoDataFrame:
@@ -55,9 +88,7 @@ def sample_raster(zip_path: Path, member: str, lon, lat) -> np.ndarray:
 
 def distance_to_rivers_km(grid: gpd.GeoDataFrame) -> np.ndarray:
     """Distance from each cell centre to the nearest river with mean discharge >= 1 m3/s."""
-    shapefile = next(n for n in zipfile.ZipFile(HYDRORIVERS_ZIP).namelist() if n.endswith(".shp"))
-    rivers = gpd.read_file(f"zip://{HYDRORIVERS_ZIP.as_posix()}!{shapefile}", bbox=(112, -44, 154, -10))
-    rivers = rivers.loc[rivers["DIS_AV_CMS"] >= MIN_RIVER_DISCHARGE_M3S, ["geometry"]].to_crs(AUSTRALIAN_ALBERS)
+    rivers = major_rivers(MIN_RIVER_DISCHARGE_M3S)[["geometry"]]
     nearest = gpd.sjoin_nearest(grid[["geometry"]], rivers, distance_col="distance_m")
     return nearest.groupby(level=0)["distance_m"].min().reindex(grid.index).to_numpy() / 1000
 
@@ -68,12 +99,13 @@ def environmental_grid(cell_size_m: float, overwrite: bool = False) -> pd.DataFr
         return pd.read_csv(cache)
 
     grid = australia_grid(cell_size_m)
-    for code, name in BIOCLIM_VARIABLES.items():
+    for code, name in (BIOCLIM_VARIABLES | SEASONAL_PRECIP_VARIABLES).items():
         member = f"wc2.1_10m_{code.replace('bio', 'bio_')}.tif"
         grid[name] = sample_raster(WORLDCLIM_BIO_ZIP, member, grid["lon"], grid["lat"])
     grid["elevation"] = sample_raster(WORLDCLIM_ELEV_ZIP, "wc2.1_10m_elev.tif", grid["lon"], grid["lat"])
     grid["distance_to_river_km"] = distance_to_rivers_km(grid)
 
     table = pd.DataFrame(grid.drop(columns="geometry")).dropna()
+    table["climate_zone"] = climate_zone(table)
     table.to_csv(cache, index=False)
     return table
