@@ -63,6 +63,28 @@ def native_grid(cell_size_m: float) -> pd.DataFrame:
     return pd.DataFrame(grid.drop(columns="geometry")).dropna()
 
 
+FILTERS = ["east_of_andes", "in_latitude_range", "country_ok", "recent", "precise"]
+ACCESSIBLE_KM = 500
+
+
+def native_training_cells(cell_size_m: float) -> pd.DataFrame:
+    """Native grid cells within the accessible area, with `toad` = 1 where R. marina s.s. was recorded."""
+    from scipy.spatial import cKDTree
+
+    records = load_native_records()
+    kept = records.loc[records[FILTERS].all(axis=1)]
+    points = gpd.GeoDataFrame(
+        kept, geometry=gpd.points_from_xy(kept["decimalLongitude"], kept["decimalLatitude"]), crs=4326
+    ).to_crs(SOUTH_AMERICA_ALBERS)
+    presence = pd.DataFrame({
+        "cx": (points.geometry.x // cell_size_m).astype(int),
+        "cy": (points.geometry.y // cell_size_m).astype(int),
+    }).drop_duplicates().assign(toad=1)
+    grid = native_grid(cell_size_m).merge(presence, how="left", on=["cx", "cy"]).fillna({"toad": 0})
+    distance, _ = cKDTree(grid.loc[grid["toad"] == 1, ["cx", "cy"]]).query(grid[["cx", "cy"]])
+    return grid.loc[distance * cell_size_m / 1000 <= ACCESSIBLE_KM].reset_index(drop=True)
+
+
 def niche_density(scores_occupied: np.ndarray, scores_background: np.ndarray, axis_grid: np.ndarray) -> np.ndarray:
     """Occurrence density corrected by environment availability (Broennimann et al. 2012).
 
