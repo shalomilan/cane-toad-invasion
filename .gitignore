@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Data (downloaded, reproducible from code)
+data/raw/
+data/processed/
+
+# Secrets
+.env
+
+# Jupyter
+.ipynb_checkpoints/
