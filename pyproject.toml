@@ -12,6 +12,7 @@ dependencies = [
     "lightgbm>=4.7.0",
     "matplotlib>=3.11.2",
     "pandas>=3.0.6",
+    "pygbif>=0.7.0",
     "python-dotenv>=1.2.4",
     "rasterio>=1.5.2",
     "scikit-learn>=1.9.1",

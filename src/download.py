@@ -50,17 +50,75 @@ def download_occurrences(overwrite: bool = False) -> Path:
     return RAW_PATH
 
 
+COUNTRIES_PATH = RAW_DIR / "ne_50m_admin_0_countries.gpkg"
+
+
+def download_countries(overwrite: bool = False) -> gpd.GeoDataFrame:
+    if COUNTRIES_PATH.exists() and not overwrite:
+        return gpd.read_file(COUNTRIES_PATH)
+
+    zip_path = RAW_DIR / "ne_50m_admin_0_countries.zip"
+    urllib.request.urlretrieve(NATURAL_EARTH_URL, zip_path)
+    countries = gpd.read_file(zip_path)[["ADMIN", "ISO_A2_EH", "CONTINENT", "geometry"]]
+    countries.to_file(COUNTRIES_PATH)
+    zip_path.unlink()
+    return countries
+
+
 def download_australia_outline(overwrite: bool = False) -> gpd.GeoDataFrame:
     if OUTLINE_PATH.exists() and not overwrite:
         return gpd.read_file(OUTLINE_PATH)
 
-    zip_path = RAW_DIR / "ne_50m_admin_0_countries.zip"
-    urllib.request.urlretrieve(NATURAL_EARTH_URL, zip_path)
-    countries = gpd.read_file(zip_path)
+    countries = download_countries()
     australia = countries.loc[countries["ADMIN"] == "Australia", ["ADMIN", "geometry"]]
     australia.to_file(OUTLINE_PATH)
-    zip_path.unlink()
     return australia
+
+
+GBIF_RHINELLA_MARINA_KEY = 5216933
+GBIF_NATIVE_ZIP = RAW_DIR / "gbif_rhinella_marina_south_america.zip"
+GBIF_CITATION = RAW_DIR / "gbif_rhinella_marina_south_america_citation.txt"
+
+
+def download_gbif_native_range(overwrite: bool = False) -> Path:
+    """Request a citable GBIF download (with DOI) of R. marina records from South America."""
+    if GBIF_NATIVE_ZIP.exists() and not overwrite:
+        return GBIF_NATIVE_ZIP
+
+    import time
+
+    from pygbif import occurrences
+
+    load_dotenv()
+    user, password, email = (os.getenv(k) for k in ("GBIF_USER", "GBIF_PWD", "GBIF_EMAIL"))
+    if not all((user, password, email)):
+        raise RuntimeError("GBIF_USER, GBIF_PWD and GBIF_EMAIL must be set in .env.")
+
+    download_key = occurrences.download(
+        [
+            f"taxonKey = {GBIF_RHINELLA_MARINA_KEY}",
+            "continent = SOUTH_AMERICA",
+            "hasCoordinate = TRUE",
+            "hasGeospatialIssue = FALSE",
+            "occurrenceStatus = PRESENT",
+        ],
+        format="SIMPLE_CSV",
+        user=user,
+        pwd=password,
+        email=email,
+    )[0]
+    while (meta := occurrences.download_meta(download_key))["status"] not in ("SUCCEEDED", "FAILED", "KILLED"):
+        time.sleep(30)
+    if meta["status"] != "SUCCEEDED":
+        raise RuntimeError(f"GBIF download {download_key} ended with status {meta['status']}")
+
+    occurrences.download_get(download_key, path=str(RAW_DIR))
+    (RAW_DIR / f"{download_key}.zip").rename(GBIF_NATIVE_ZIP)
+    GBIF_CITATION.write_text(
+        f"GBIF.org ({meta['created'][:10]}) GBIF Occurrence Download https://doi.org/{meta['doi']}\n",
+        encoding="utf-8",
+    )
+    return GBIF_NATIVE_ZIP
 
 
 if __name__ == "__main__":

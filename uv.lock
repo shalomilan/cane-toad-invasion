@@ -45,6 +45,15 @@ wheels = [
 ]
 
 [[package]]
+name = "appdirs"
+version = "1.4.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d7/d8/05696357e0311f5b5c316d7b95f46c669dd9c15aaeecbb48c7d0aeb88c40/appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41", size = 13470, upload-time = "2020-05-11T07:59:51.037Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/00/2344469e2084fb287c2e0b57b72910309874c3245463acd6cf5e3db69324/appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128", size = 9566, upload-time = "2020-05-11T07:59:49.499Z" },
+]
+
+[[package]]
 name = "appnope"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -130,6 +139,7 @@ dependencies = [
     { name = "lightgbm" },
     { name = "matplotlib" },
     { name = "pandas" },
+    { name = "pygbif" },
     { name = "python-dotenv" },
     { name = "rasterio" },
     { name = "scikit-learn" },
@@ -151,6 +161,7 @@ requires-dist = [
     { name = "lightgbm", specifier = ">=4.7.0" },
     { name = "matplotlib", specifier = ">=3.11.2" },
     { name = "pandas", specifier = ">=3.0.6" },
+    { name = "pygbif", specifier = ">=0.7.0" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "rasterio", specifier = ">=1.5.2" },
     { name = "scikit-learn", specifier = ">=1.9.1" },
@@ -161,6 +172,19 @@ requires-dist = [
 dev = [
     { name = "nbclient", specifier = ">=0.11.0" },
     { name = "nbformat", specifier = ">=5.11.1" },
+]
+
+[[package]]
+name = "cattrs"
+version = "26.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/23/75/e72b839c3dc869c990b4842f3dba730bdcdf5215f68fc7955edf849a1792/cattrs-26.2.1.tar.gz", hash = "sha256:679132bfdc225c5ee40c024fc42519954767c387f950dc6751946c586bccdc6d", size = 525617, upload-time = "2026-09-26T20:53:21.114Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/cf/22794a399d99480486120e26e879ef008e21f5e85274c2ed591d568bb326/cattrs-26.2.1-py3-none-any.whl", hash = "sha256:a12aaa3453dc8f633a815293179f08b7421ed18d2575c459c3c736f840beac24", size = 74843, upload-time = "2026-09-26T20:53:19.767Z" },
 ]
 
 [[package]]
@@ -684,6 +708,27 @@ dependencies = [
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a2/9d/16e1a7af360de19257ff8044b5eac8bae0bc3f18a917405515f92a55cdcd/galah_python-0.14.1-py3-none-any.whl", hash = "sha256:026bade33696a25b0d3f019296efb7cdde902544953d61d86d932f8fbdf1a386", size = 82956, upload-time = "2026-10-08T22:29:37.894Z" },
+]
+
+[[package]]
+name = "geojson-rewind"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/bb/6f9ca8311baad6e2111101ff1625a46d66fc46ffe828126d06fd314d22ee/geojson_rewind-1.2.1.tar.gz", hash = "sha256:1b7b8b3714eb1f0cfccdba023444f0073be2c9ce148d72c69fd097ea7743da60", size = 3996, upload-time = "2025-10-22T18:21:23.956Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/3a/a8eec7f3288b485c1b679f5f83a8e2be756748137f99a656f2669bf16159/geojson_rewind-1.2.1-py3-none-any.whl", hash = "sha256:0336c1940d070686edf254d8783fe7c9acc5c6b107a0a87b8c628cd28c0651d1", size = 5203, upload-time = "2025-10-22T18:21:22.724Z" },
+]
+
+[[package]]
+name = "geomet"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2a/8c/dde022aa6747b114f6b14a7392871275dea8867e2bd26cddb80cc6d66620/geomet-1.1.0.tar.gz", hash = "sha256:51e92231a0ef6aaa63ac20c443377ba78a303fd2ecd179dc3567de79f3c11605", size = 28732, upload-time = "2023-11-14T15:43:36.764Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/af/90/3bc780df088d439714af8295196a4332a26559ae66fd99865e36f92efa9e/geomet-1.1.0-py3-none-any.whl", hash = "sha256:4372fe4e286a34acc6f2e9308284850bd8c4aa5bc12065e2abbd4995900db12f", size = 31522, upload-time = "2023-11-14T15:43:35.305Z" },
 ]
 
 [[package]]
@@ -1907,6 +1952,23 @@ wheels = [
 ]
 
 [[package]]
+name = "pygbif"
+version = "0.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "appdirs" },
+    { name = "geojson-rewind" },
+    { name = "geomet" },
+    { name = "matplotlib" },
+    { name = "requests" },
+    { name = "requests-cache" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0f/83/78979d012c439337e1e5f89b535297b6a97e5123ca45161d3887fb47de9a/pygbif-0.7.0.tar.gz", hash = "sha256:f287fab6a70d5e2f26ce0dc7ad6e3d47113c4c86d40d0b8f631596283d8bbf35", size = 85050, upload-time = "2026-10-07T08:11:17.053Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6b/07/1fab26ca16ee996133c1d1cbc551f9fb8239c733cd98151768f2c3236b29/pygbif-0.7.0-py3-none-any.whl", hash = "sha256:aef540ea80943bbc6eb03c554047d477d9022d18d47fadb1d0d5ab254a7f9614", size = 101385, upload-time = "2026-10-07T08:11:15.881Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.21.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2187,6 +2249,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ac/c3/e2a2b89f2d3e2179abd6d00ebd70bff6273f37fb3e0cc209f48b39d00cbf/requests-2.34.2.tar.gz", hash = "sha256:f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed", size = 142856, upload-time = "2026-05-14T19:25:27.735Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl", hash = "sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0", size = 73075, upload-time = "2026-05-14T19:25:26.443Z" },
+]
+
+[[package]]
+name = "requests-cache"
+version = "1.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "cattrs" },
+    { name = "platformdirs" },
+    { name = "requests" },
+    { name = "url-normalize" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/32/ab/a340c7f529646f16e5656a8ba1424ed0de406203e4554868491786628730/requests_cache-1.3.3.tar.gz", hash = "sha256:79b72d5ac5143992d1836ad78f4d8e65666061dd44e220548caab3723089826b", size = 101179, upload-time = "2026-07-03T19:48:57.963Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a5/bf/c1775e49b350225bd851576ba75263bc728d8f05c0e31439a45f3429cc7b/requests_cache-1.3.3-py3-none-any.whl", hash = "sha256:c8df20ff874ebfc026959e3874e6c12bd6724934cdb10925915908453d4b17e4", size = 70788, upload-time = "2026-07-03T19:48:56.693Z" },
 ]
 
 [[package]]
@@ -2662,6 +2741,18 @@ name = "unittest2py3k"
 version = "0.5.1"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/4e/3d/d44421e8d828af1399c1509c196db92e2a58f3764b01a0ee928d7025d1ca/unittest2py3k-0.5.1.tar.gz", hash = "sha256:78249c5f1ac508a34d9d131d43a89d77bf154186f3ea5f7a6b993d3f3535d403", size = 55493, upload-time = "2010-07-14T15:54:25.69Z" }
+
+[[package]]
+name = "url-normalize"
+version = "3.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "idna" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/33/26/b60cce0211e94bb130e88dbcba87583f61c6ddf386fa6adc10a167461f6a/url_normalize-3.0.1.tar.gz", hash = "sha256:1655cd214159d9d47dc37aa6ce993c2149da44fa35cac6bafd90036a4eda3ac3", size = 28198, upload-time = "2026-09-22T22:20:54.513Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/bf/98209a164859c81d9eec311ee2b35cd1e5b33c7be8d3665c08850557abe1/url_normalize-3.0.1-py3-none-any.whl", hash = "sha256:97ea68fc543b1fc9f270f34c90cf164453e7d490da2ec653dcd8ebd4e3ac1faf", size = 18296, upload-time = "2026-09-22T22:20:53.342Z" },
+]
 
 [[package]]
 name = "urllib3"

@@ -62,9 +62,9 @@ def major_rivers(min_discharge_m3s: float) -> gpd.GeoDataFrame:
     return rivers.loc[rivers["DIS_AV_CMS"] >= min_discharge_m3s, ["DIS_AV_CMS", "geometry"]].to_crs(AUSTRALIAN_ALBERS)
 
 
-def australia_grid(cell_size_m: float) -> gpd.GeoDataFrame:
-    """Cells whose centre falls on Australian land, indexed like `front.records_to_cells`."""
-    land = download_australia_outline().to_crs(AUSTRALIAN_ALBERS)
+def land_grid(land: gpd.GeoDataFrame, crs, cell_size_m: float) -> gpd.GeoDataFrame:
+    """Cells whose centre falls on `land`, in an equal-area `crs`, indexed like `front.records_to_cells`."""
+    land = land.to_crs(crs)
     xmin, ymin, xmax, ymax = land.total_bounds
     cx, cy = np.meshgrid(
         np.arange(xmin // cell_size_m, xmax // cell_size_m + 1),
@@ -72,10 +72,22 @@ def australia_grid(cell_size_m: float) -> gpd.GeoDataFrame:
     )
     cells = pd.DataFrame({"cx": cx.ravel().astype(int), "cy": cy.ravel().astype(int)})
     centres = gpd.points_from_xy((cells["cx"] + 0.5) * cell_size_m, (cells["cy"] + 0.5) * cell_size_m)
-    grid = gpd.GeoDataFrame(cells, geometry=centres, crs=AUSTRALIAN_ALBERS)
+    grid = gpd.GeoDataFrame(cells, geometry=centres, crs=crs)
     grid = grid.loc[grid.within(land.union_all())].reset_index(drop=True)
     lonlat = grid.to_crs(4326).geometry
     grid["lon"], grid["lat"] = lonlat.x, lonlat.y
+    return grid
+
+
+def australia_grid(cell_size_m: float) -> gpd.GeoDataFrame:
+    return land_grid(download_australia_outline(), AUSTRALIAN_ALBERS, cell_size_m)
+
+
+def add_climate(grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    for code, name in (BIOCLIM_VARIABLES | SEASONAL_PRECIP_VARIABLES).items():
+        member = f"wc2.1_10m_{code.replace('bio', 'bio_')}.tif"
+        grid[name] = sample_raster(WORLDCLIM_BIO_ZIP, member, grid["lon"], grid["lat"])
+    grid["elevation"] = sample_raster(WORLDCLIM_ELEV_ZIP, "wc2.1_10m_elev.tif", grid["lon"], grid["lat"])
     return grid
 
 
@@ -98,11 +110,7 @@ def environmental_grid(cell_size_m: float, overwrite: bool = False) -> pd.DataFr
     if cache.exists() and not overwrite:
         return pd.read_csv(cache)
 
-    grid = australia_grid(cell_size_m)
-    for code, name in (BIOCLIM_VARIABLES | SEASONAL_PRECIP_VARIABLES).items():
-        member = f"wc2.1_10m_{code.replace('bio', 'bio_')}.tif"
-        grid[name] = sample_raster(WORLDCLIM_BIO_ZIP, member, grid["lon"], grid["lat"])
-    grid["elevation"] = sample_raster(WORLDCLIM_ELEV_ZIP, "wc2.1_10m_elev.tif", grid["lon"], grid["lat"])
+    grid = add_climate(australia_grid(cell_size_m))
     grid["distance_to_river_km"] = distance_to_rivers_km(grid)
 
     table = pd.DataFrame(grid.drop(columns="geometry")).dropna()
