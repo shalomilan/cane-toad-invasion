@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cane Toad Invasion</title>
-<meta name="description" content="Cane toad invasion in Australia: what happened vs what a colonisation model predicted, 1935-2035.">
+<meta name="description" content="Cane toad invasion in Australia: what happened, whether a colonisation model could predict it, and what comes next.">
 <style>
 :root {
   --bg: #fbfaf7; --surface: #ffffff; --text: #1f1d1a; --muted: #6b665e; --border: #e3dfd7;
@@ -38,21 +38,28 @@ h2 { font-size: 1rem; margin: 0 0 8px; }
 p { margin: 0 0 8px; }
 .muted { color: var(--muted); }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin: 16px 0 10px; }
-.year { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.2em; }
-#slider { flex: 1 1 260px; accent-color: var(--accent); }
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+#theme { font-size: 1.2rem; line-height: 1; padding: 6px 10px; flex: none; }
 button, select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border);
   border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin: 14px 0 10px; }
+.year { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.2em; }
+#slider { flex: 1 1 260px; accent-color: var(--accent); }
 .phase { margin-bottom: 14px; padding: 10px 14px; border-left: 4px solid var(--accent); }
 .maps { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.map canvas { width: 100%; height: auto; display: block; }
 .map { position: relative; }
+.map canvas { width: 100%; height: auto; display: block; cursor: crosshair; }
+.hidden { display: none !important; }
 .overlay { position: absolute; inset: 44px 14px 14px; display: flex; align-items: center; justify-content: center;
   text-align: center; color: var(--muted); font-weight: 600; pointer-events: none; }
+.tooltip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 10px; font-size: 0.82rem; line-height: 1.4; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap; z-index: 2; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; font-size: 0.85rem; color: var(--muted); margin: 10px 0 16px; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
 .ramp { display: inline-block; width: 120px; height: 10px; border-radius: 2px; vertical-align: 0; margin: 0 4px; }
-.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+.metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 14px; }
 .metric .row { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
 .metric .value { font-weight: 600; text-align: right; }
 .metric .interval { font-size: 0.8rem; color: var(--muted); text-align: right; }
@@ -60,11 +67,6 @@ button, select { font: inherit; color: var(--text); background: var(--surface); 
 svg text { fill: var(--muted); font-size: 11px; }
 footer { margin-top: 24px; font-size: 0.85rem; color: var(--muted); }
 footer li { margin-bottom: 4px; }
-.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-#theme { font-size: 1.2rem; line-height: 1; padding: 6px 10px; flex: none; }
-button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-.zones { display: none; }
-.zones.on { display: flex; }
 label.check { font-size: 0.9rem; color: var(--muted); cursor: pointer; }
 @media (max-width: 720px) {
   .maps, .charts, .metrics { grid-template-columns: 1fr; }
@@ -73,35 +75,32 @@ label.check { font-size: 0.9rem; color: var(--muted); cursor: pointer; }
 </head>
 <body>
 <main>
-  <div class="header"><h1>Cane toad invasion: reality vs model</h1><button id="theme" type="button" aria-label="Switch light or dark mode" title="Switch light or dark mode"></button></div>
-  <p class="muted">Each square is a 25 × 25 km cell. Left: where toads were actually recorded. Right: the probability that a cell has toad records, from a colonisation model that only saw data up to its start year.</p>
+  <div class="header"><h1>Cane toad invasion in Australia</h1><button id="theme" type="button" aria-label="Switch light or dark mode" title="Switch light or dark mode"></button></div>
+  <p class="muted">Each square is a 25 × 25 km cell. Left: where toads were actually recorded. Right: what a colonisation model predicted. Hover over a cell to see its details.</p>
 
   <div class="controls">
     <span class="year" id="yearLabel"></span>
     <button id="play" type="button">Play</button>
     <input id="slider" type="range" aria-label="Year">
-    <select id="scenario" aria-label="Climate scenario">
-      <option value="observed niche">Observed niche (conservative)</option>
-      <option value="expanded niche">Expanded niche (native + Australian records)</option>
-      <option value="observed niche, desert limit">Observed niche + desert limit</option>
-      <option value="expanded niche, desert limit">Expanded niche + desert limit</option>
+    <select id="scenario" aria-label="Model scenario">
+      <option value="presence model">Model</option>
+      <option value="presence model, desert limit">Model + desert limit</option>
     </select>
     <button id="zonesButton" type="button" aria-pressed="false">Climate zones and rivers</button>
   </div>
 
   <div class="card phase" id="phase"></div>
 
-  <div class="maps">
-    <div class="card map"><h2>Reality</h2><canvas id="realityMap"></canvas><div class="overlay" id="realityOverlay"></div></div>
-    <div class="card map"><h2 id="modelTitle">Model</h2><canvas id="modelMap"></canvas><div class="overlay" id="modelOverlay"></div></div>
+  <div class="maps" id="maps">
+    <div class="card map" id="realityCard"><h2 id="realityTitle">Reality</h2><canvas id="realityMap"></canvas><div class="overlay" id="realityOverlay"></div></div>
+    <div class="card map" id="modelCard"><h2 id="modelTitle">Model</h2><canvas id="modelMap"></canvas><div class="overlay" id="modelOverlay"></div></div>
   </div>
   <div class="legend">
-    <span><span class="swatch" style="background:var(--baseline)"></span><span id="baselineLabel"></span></span>
-    <span><span class="swatch" style="background:var(--ink)"></span>Recorded after that year</span>
-    <span>Model probability: 1%<span class="ramp" id="ramp"></span>100%</span>
-    <span><span class="swatch" style="border:1.5px solid var(--text)"></span>Pilbara (arid barrier)</span>
+    <span id="baselineItem"><span class="swatch" style="background:var(--baseline)"></span><span id="baselineLabel"></span></span>
+    <span id="inkItem"><span class="swatch" style="background:var(--ink)"></span><span id="inkLabel"></span></span>
+    <span id="rampItem">Model probability: 5%<span class="ramp" id="ramp"></span>100% (cells below 5% not shown)</span>
   </div>
-  <div class="legend zones" id="zonesLegend">
+  <div class="legend hidden" id="zonesLegend">
     <span><span class="swatch" style="background:var(--z0)"></span>Desert (BW)</span>
     <span><span class="swatch" style="background:var(--z1)"></span>Semi-arid (BS)</span>
     <span><span class="swatch" style="background:var(--z2)"></span>Humid, summer rain</span>
@@ -110,14 +109,13 @@ label.check { font-size: 0.9rem; color: var(--muted); cursor: pointer; }
     <span><span class="swatch" style="background:var(--river);height:3px;vertical-align:3px"></span>Rivers (mean flow ≥ 20 m³/s)</span>
     <span>Köppen arid classes (Peel et al. 2007) from WorldClim; rivers from HydroRIVERS</span>
   </div>
-  <div class="legend" style="margin-top:0">
-    <label class="check"><input type="checkbox" id="outline"> Outline real new records on the model map</label>
+  <div class="legend" id="outlineRow" style="margin-top:0">
+    <label class="check"><input type="checkbox" id="outline"> Outline the real new records on the model map</label>
   </div>
 
   <div class="metrics">
     <div class="card metric"><h2>Occupied area</h2><div id="mArea"></div></div>
-    <div class="card metric"><h2>Western front: km advanced</h2><div id="mFront"></div></div>
-    <div class="card metric"><h2>Toads in the Pilbara</h2><div id="mPilbara"></div></div>
+    <div class="card metric"><h2 id="mFrontTitle">Western front: km advanced</h2><div id="mFront"></div></div>
   </div>
 
   <div class="charts">
@@ -126,21 +124,22 @@ label.check { font-size: 0.9rem; color: var(--muted); cursor: pointer; }
   </div>
   <p class="legend" style="margin-top:8px">
     <span><span class="swatch" style="background:var(--text)"></span>Observed</span>
-    <span><span class="swatch" style="background:var(--alt)"></span>Backtest: model trained with data up to 2015</span>
-    <span><span class="swatch" style="background:var(--accent)"></span>Forecast: model trained with data up to 2025</span>
+    <span><span class="swatch" style="background:var(--alt)"></span>Test: area with records, model trained up to 2020</span>
+    <span><span class="swatch" style="background:var(--accent)"></span>Forecast: area with toads present (recorded or not), trained up to 2025</span>
     <span>Shaded: 90% of simulations</span>
   </p>
 
   <footer>
     <h2>How to read it</h2>
     <ul>
-      <li><strong>"Occupied" means "has toad records".</strong> Survey effort grew about 15-fold after 2017 (FrogID), so many cells behind the front got their first record late. That is why every scenario underestimates the number of new cells, even where it places the front well.</li>
-      <li><strong>The slowdown at the Pilbara is an extrapolation.</strong> The toad has never met that desert, so no data can validate it yet. The scenarios bracket how much we don't know about its climatic limits.</li>
-      <li><strong>Desert limit:</strong> the same model, but desert cells (Köppen BW) cannot be colonised. In the backtest it removes the spurious desert colonisations, but the front then lags ~150 km behind reality: without the desert shortcut the model advances too slowly. No version wins on everything, so all four are shown.</li>
+      <li><strong>A record is not the same as a toad.</strong> A record needs toads to be there and someone to report them. The model separates both: toads <em>arrive</em> (depending on distance, neighbours, climate and region) and are then <em>detected</em> (depending on how many people record frogs there). Where few people look, toads can be present for years without a record.</li>
+      <li><strong>Test years (2021–2025)</strong> show the probability of a <em>record</em>, which is what can be compared with reality. <strong>Forecast years (2026–2035)</strong> show the probability that toads are <em>present</em>, recorded or not. That is why the area jumps in 2026: it starts counting toads that are there but not yet recorded.</li>
+      <li><strong>Assumption:</strong> once toads arrive in a cell, they stay. This may fail at the dry margins, where toads are recorded less often than expected.</li>
+      <li><strong>Desert limit:</strong> the same model, but desert cells (Köppen BW) cannot be colonised.</li>
       <li>The western front is the third westernmost occupied cell west of 141°E; its advance is measured from its position in the first year with at least three occupied cells west of 141°E.</li>
       <li>Records for 2025 are probably incomplete (upload lag in the Atlas of Living Australia).</li>
     </ul>
-    <p>Data: Atlas of Living Australia, GBIF, WorldClim 2.1, HydroRIVERS. Model: discrete-time survival (logistic regression) on a cell × year table, simulated 50 (backtest) and 200 (forecast) times. <a href="https://github.com/shalomilan/cane-toad-invasion" style="color:var(--accent)">Code and notebooks</a>.</p>
+    <p>Data: Atlas of Living Australia, GBIF, WorldClim 2.1, HydroRIVERS. Model: discrete-time survival (logistic regression) on a cell × year table, simulated 50 (test) and 200 (forecast) times, with survey effort near the invaded range as a predictor. <a href="https://github.com/shalomilan/cane-toad-invasion" style="color:var(--accent)">Code and notebooks</a>.</p>
   </footer>
 </main>
 
@@ -154,7 +153,18 @@ for (const [scenario, periods] of Object.entries(DATA.prob)) {
   prob[scenario] = { backtest: decode(periods.backtest), forecast: decode(periods.forecast) };
 }
 const firstYear = DATA.first_year;
-const BACKTEST_START = 2016, FORECAST_START = 2026, LAST_OBSERVED = 2025;
+const MIN_P = 0.05;
+const ZONE_NAMES = ["Desert (BW)", "Semi-arid (BS)", "Humid, summer rain", "Humid, winter rain", "Humid, year-round rain"];
+const TEST_CUTOFF = 2020, LAST_OBSERVED = 2025, END = 2035;
+const PHASES = {
+  history: "<strong>What happened.</strong> Cane toads were released in Queensland in 1935. Each dark cell has at least one toad record by the selected year. The model starts predicting after 2020.",
+  backtest: "<strong>Test: reality vs model.</strong> The model was trained only with data up to 2020 and simulated the invasion year by year, without seeing anything after 2020. Grey cells were already occupied in 2020. Did it put the probability where toads actually appeared?",
+  forecast: "<strong>Forecast.</strong> The model, retrained with all data up to 2025, simulated 200 times. Grey cells have toad records. The colour is the probability that <em>toads are present</em> by the selected year, recorded or not: some coloured cells probably have toads already.",
+};
+const phaseOf = (year) => (year <= TEST_CUTOFF ? "history" : year <= LAST_OBSERVED ? "backtest" : "forecast");
+const startOf = { backtest: TEST_CUTOFF + 1, forecast: LAST_OBSERVED + 1 };
+const baselineOf = { backtest: TEST_CUTOFF, forecast: LAST_OBSERVED };
+let showZones = false;
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 let RAMP = [];
@@ -167,13 +177,15 @@ function rampColor(p) {
 function updateRamp() {
   RAMP = css("--ramp").split(",").map((h) => h.trim()).map((h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)));
   document.getElementById("ramp").style.background =
-    `linear-gradient(to right, ${[0, 0.2, 0.4, 0.6, 0.8, 1].map(rampColor).join(",")})`;
+    `linear-gradient(to right, ${[0, 0.25, 0.5, 0.75, 1].map((p) => rampColor(MIN_P + p * (1 - MIN_P))).join(",")})`;
 }
 
 const minX = Math.min(...DATA.cx), maxX = Math.max(...DATA.cx);
 const minY = Math.min(...DATA.cy), maxY = Math.max(...DATA.cy);
 const CELL = 4;
 const W = (maxX - minX + 1) * CELL, H = (maxY - minY + 1) * CELL;
+const cellAt = new Map();
+for (let i = 0; i < n; i++) cellAt.set(`${DATA.cx[i]},${DATA.cy[i]}`, i);
 
 function setupCanvas(canvas) {
   const dpr = window.devicePixelRatio || 1;
@@ -187,13 +199,6 @@ const modelCtx = setupCanvas(document.getElementById("modelMap"));
 const px = (i) => (DATA.cx[i] - minX) * CELL;
 const py = (i) => (maxY - DATA.cy[i]) * CELL;
 
-function drawPilbara(ctx) {
-  const b = DATA.pilbara_box;
-  ctx.strokeStyle = css("--text"); ctx.lineWidth = 1.5;
-  ctx.strokeRect((b[0] - minX) * CELL, (maxY - b[3]) * CELL, (b[2] - b[0] + 1) * CELL, (b[3] - b[1] + 1) * CELL);
-}
-
-let showZones = false;
 function drawRivers(ctx) {
   ctx.strokeStyle = css("--river"); ctx.lineWidth = 1.2; ctx.lineJoin = "round";
   for (const line of DATA.rivers) {
@@ -206,59 +211,61 @@ function drawRivers(ctx) {
   }
 }
 
-function phaseOf(year) {
-  if (year < BACKTEST_START) return "history";
-  if (year < FORECAST_START) return "backtest";
-  return "forecast";
+function probabilityOf(i, year, scenario) {
+  const phase = phaseOf(year);
+  if (phase === "history") return null;
+  return prob[scenario][phase][(year - startOf[phase]) * n + i] / 255;
 }
-const baselineOf = (year) => (phaseOf(year) === "history" ? year : phaseOf(year) === "backtest" ? 2015 : 2025);
 
 function drawMaps(year, scenario) {
-  const phase = phaseOf(year), baseline = baselineOf(year);
+  const phase = phaseOf(year);
   const land = css("--land"), grey = css("--baseline"), ink = css("--ink");
   const zoneColours = [0, 1, 2, 3, 4].map((z) => css(`--z${z}`));
   const landOf = (i) => (showZones ? zoneColours[DATA.zone[i]] : land);
-  const observedUntil = Math.min(year, LAST_OBSERVED);
-  const probs = phase === "history" ? null : prob[scenario][phase];
-  const offset = phase === "backtest" ? (year - BACKTEST_START) * n : (year - FORECAST_START) * n;
   const outline = document.getElementById("outline").checked;
+  const shownYear = Math.min(year, LAST_OBSERVED);
 
-  for (const ctx of [realityCtx, modelCtx]) { ctx.clearRect(0, 0, W, H); }
+  for (const ctx of [realityCtx, modelCtx]) ctx.clearRect(0, 0, W, H);
   for (let i = 0; i < n; i++) {
     const x = px(i), y = py(i), fy = firstYear[i];
     let real = landOf(i);
-    if (fy && fy <= baseline) real = phase === "history" ? ink : grey;
-    else if (fy && fy <= observedUntil) real = ink;
+    if (phase !== "history" && fy && fy <= baselineOf[phase]) real = grey;
+    else if (fy && fy <= shownYear) real = ink;
     realityCtx.fillStyle = real; realityCtx.fillRect(x, y, CELL, CELL);
 
     let model = landOf(i);
-    if (phase !== "history" && fy && fy <= baseline) model = grey;
-    else if (probs) { const p = probs[offset + i] / 255; if (p >= 0.01) model = rampColor(p); }
+    if (phase !== "history") {
+      if (fy && fy <= baselineOf[phase]) model = grey;
+      else { const p = probabilityOf(i, year, scenario); if (p >= MIN_P) model = rampColor(p); }
+    }
     modelCtx.fillStyle = model; modelCtx.fillRect(x, y, CELL, CELL);
   }
   if (outline && phase === "backtest") {
     modelCtx.strokeStyle = css("--text"); modelCtx.lineWidth = 0.8;
     for (let i = 0; i < n; i++) {
       const fy = firstYear[i];
-      if (fy && fy > baseline && fy <= year) modelCtx.strokeRect(px(i) + 0.4, py(i) + 0.4, CELL - 0.8, CELL - 0.8);
+      if (fy && fy > TEST_CUTOFF && fy <= year) modelCtx.strokeRect(px(i) + 0.4, py(i) + 0.4, CELL - 0.8, CELL - 0.8);
     }
   }
   if (showZones) { drawRivers(realityCtx); drawRivers(modelCtx); }
-  drawPilbara(realityCtx); drawPilbara(modelCtx);
-
-  document.getElementById("realityOverlay").textContent = phase === "forecast" ? "Not observed yet (showing 2025)" : "";
-  document.getElementById("modelOverlay").textContent = phase === "history" ? "Training period: the model starts predicting in 2016" : "";
-  document.getElementById("modelTitle").textContent =
-    phase === "history" ? "Model" : `Model: P(occupied by ${year}), trained with data up to ${baseline}`;
-  document.getElementById("baselineLabel").textContent =
-    phase === "history" ? "Recorded by this year" : `Recorded by ${baseline} (the model's starting point)`;
 }
 
-const PHASES = {
-  history: "<strong>History (1935–2015).</strong> Toads were released in Queensland in 1935. These years are the model's training data, so there is nothing to compare yet.",
-  backtest: "<strong>Backtest (2016–2025): reality vs model.</strong> The model was trained only with data up to 2015 and simulated the invasion year by year. Compare the two maps: did it put the probability where toads actually appeared?",
-  forecast: "<strong>Forecast (2026–2035).</strong> The same model, retrained with all data up to 2025. Nothing to compare with yet: this is the prediction.",
-};
+function updateLabels(year) {
+  const phase = phaseOf(year);
+  document.getElementById("phase").innerHTML = PHASES[phase];
+  document.getElementById("realityTitle").textContent = phase === "forecast" ? "Reality: last observed year (2025)" : `Reality: toad records by ${year}`;
+  document.getElementById("modelTitle").textContent = phase === "history" ? "Model"
+    : phase === "backtest" ? `Model trained up to 2020: P(record by ${year})`
+    : `Forecast trained up to 2025: P(toads present in ${year})`;
+  document.getElementById("realityOverlay").textContent = "";
+  document.getElementById("modelOverlay").textContent = phase === "history" ? "The model starts in 2021 (trained with data up to 2020)" : "";
+  document.getElementById("baselineItem").classList.toggle("hidden", phase === "history");
+  document.getElementById("rampItem").classList.toggle("hidden", phase === "history");
+  document.getElementById("outlineRow").classList.toggle("hidden", phase !== "backtest");
+  document.getElementById("baselineLabel").textContent = `Recorded by ${baselineOf[phase]} (the model's starting point)`;
+  document.getElementById("inkLabel").textContent = phase === "backtest" ? "Recorded after 2020" : "Toad records";
+  document.getElementById("inkItem").classList.toggle("hidden", phase === "forecast");
+}
 
 const summary = {};
 for (const row of DATA.summary) summary[`${row.scenario}|${row.year}`] = row;
@@ -267,8 +274,9 @@ for (const row of DATA.observed) observed[row.year] = row;
 const fmtArea = (km2) => `${Math.round(km2 / 1000).toLocaleString("en-US")}k km²`;
 const advance = (x) => Math.max(0, DATA.front_start_x - x);
 const fmtFront = (x) => (x == null ? "—" : `${Math.round(advance(x)).toLocaleString("en-US")} km`);
-document.getElementById("frontChartTitle").textContent = `Western front: km advanced since ${DATA.front_start_year}`;
 const fmtP = (p) => (p < 0.01 ? "<1%" : `${Math.round(p * 100)}%`);
+document.getElementById("frontChartTitle").textContent = `Western front: km advanced since ${DATA.front_start_year}`;
+document.getElementById("mFrontTitle").textContent = `Western front: km advanced since ${DATA.front_start_year}`;
 
 function metricRows(rows) {
   return rows.map(([label, value, interval]) =>
@@ -277,23 +285,24 @@ function metricRows(rows) {
 }
 
 function drawMetrics(year, scenario) {
-  const obs = year <= LAST_OBSERVED ? observed[year] : null;
-  const sim = summary[`${scenario}|${year}`];
-  const label = phaseOf(year) === "forecast" ? "Forecast" : "Model (backtest)";
-  const realArea = obs ? fmtArea(obs.area) : "—", realFront = obs ? fmtFront(obs.front_x) : "—";
-  const realPilbara = obs ? (obs.pilbara ? "Yes" : "No") : "—";
-  document.getElementById("mArea").innerHTML = metricRows([
-    ["Reality", realArea],
-    ...(sim ? [[label, fmtArea(sim.area_median), `90%: ${fmtArea(sim.area_p5)} – ${fmtArea(sim.area_p95)}`]] : []),
-  ]);
-  document.getElementById("mFront").innerHTML = metricRows([
-    ["Reality", realFront],
-    ...(sim ? [[label, fmtFront(sim.front_x_median), `90%: ${fmtFront(sim.front_x_p95)} – ${fmtFront(sim.front_x_p5)}`]] : []),
-  ]);
-  document.getElementById("mPilbara").innerHTML = metricRows([
-    ["Reality: any record?", realPilbara],
-    ...(sim ? [[`${label}: probability`, fmtP(sim.p_pilbara)]] : []),
-  ]);
+  const obs = year <= 2025 ? observed[year] : null;
+  const sim = phaseOf(year) === "history" ? null : summary[`${scenario}|${year}`];
+  const last = observed[2025];
+  const rows = { area: [], front: [] };
+  if (obs) {
+    rows.area.push(["Reality", fmtArea(obs.area)]);
+    rows.front.push(["Reality", fmtFront(obs.front_x)]);
+  } else {
+    rows.area.push(["Observed in 2025", fmtArea(last.area)]);
+    rows.front.push(["Observed in 2025", fmtFront(last.front_x)]);
+  }
+  if (sim) {
+    const label = phaseOf(year) === "forecast" ? "Forecast" : "Model";
+    rows.area.push([label, fmtArea(sim.area_median), `90%: ${fmtArea(sim.area_p5)} – ${fmtArea(sim.area_p95)}`]);
+    rows.front.push([label, fmtFront(sim.front_x_median), `90%: ${fmtFront(sim.front_x_p95)} – ${fmtFront(sim.front_x_p5)}`]);
+  }
+  document.getElementById("mArea").innerHTML = metricRows(rows.area);
+  document.getElementById("mFront").innerHTML = metricRows(rows.front);
 }
 
 function lineChart(svgId, series, step, year, xMin) {
@@ -350,26 +359,63 @@ function drawCharts(year, scenario) {
 }
 
 const slider = document.getElementById("slider");
-slider.min = DATA.first_year_min; slider.max = 2035; slider.value = 2025;
 const scenarioSelect = document.getElementById("scenario");
 
 function render() {
   const year = Number(slider.value), scenario = scenarioSelect.value;
   updateRamp();
   document.getElementById("yearLabel").textContent = year;
-  document.getElementById("phase").innerHTML = PHASES[phaseOf(year)];
+  updateLabels(year);
   drawMaps(year, scenario); drawMetrics(year, scenario); drawCharts(year, scenario);
 }
 
+function attachTooltip(canvas, isModel) {
+  const card = canvas.parentElement;
+  const tip = document.createElement("div");
+  tip.className = "tooltip hidden";
+  card.appendChild(tip);
+  const show = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const col = Math.floor(((event.clientX - rect.left) / rect.width) * W / CELL);
+    const row = Math.floor(((event.clientY - rect.top) / rect.height) * H / CELL);
+    const i = cellAt.get(`${col + minX},${maxY - row}`);
+    if (i === undefined) { tip.classList.add("hidden"); return; }
+    const year = Number(slider.value), fy = firstYear[i];
+    const lines = [fy ? `First toad record: ${fy}` : "No toad records up to 2025"];
+    if (isModel) {
+      const phase = phaseOf(year);
+      if (phase === "history") lines.push("The model starts in 2021");
+      else if (fy && fy <= baselineOf[phase]) lines.push(`Already occupied in ${baselineOf[phase]}`);
+      else lines.push(phase === "backtest"
+        ? `Model: ${fmtP(probabilityOf(i, year, scenarioSelect.value))} chance of a record by ${year}`
+        : `Model: ${fmtP(probabilityOf(i, year, scenarioSelect.value))} chance that toads are present in ${year}`);
+    }
+    lines.push(`Climate: ${ZONE_NAMES[DATA.zone[i]]}`);
+    tip.innerHTML = lines.join("<br>");
+    tip.classList.remove("hidden");
+    const cardRect = card.getBoundingClientRect();
+    const left = event.clientX - cardRect.left + 12;
+    tip.style.left = `${Math.min(left, cardRect.width - tip.offsetWidth - 8)}px`;
+    tip.style.top = `${event.clientY - cardRect.top + 12}px`;
+  };
+  canvas.addEventListener("pointermove", show);
+  canvas.addEventListener("pointerdown", show);
+  canvas.addEventListener("pointerleave", () => tip.classList.add("hidden"));
+}
+attachTooltip(document.getElementById("realityMap"), false);
+attachTooltip(document.getElementById("modelMap"), true);
+
 let timer = null;
-document.getElementById("play").addEventListener("click", (event) => {
-  if (timer) { clearInterval(timer); timer = null; event.target.textContent = "Play"; return; }
-  if (Number(slider.value) >= 2035) slider.value = 1990;
-  event.target.textContent = "Pause";
+const playButton = document.getElementById("play");
+function stop() { if (timer) clearInterval(timer); timer = null; playButton.textContent = "Play"; }
+playButton.addEventListener("click", () => {
+  if (timer) { stop(); return; }
+  if (Number(slider.value) >= END) slider.value = 1990;
+  playButton.textContent = "Pause";
   timer = setInterval(() => {
-    if (Number(slider.value) >= 2035) { clearInterval(timer); timer = null; event.target.textContent = "Play"; return; }
+    if (Number(slider.value) >= END) { stop(); return; }
     slider.value = Number(slider.value) + 1; render();
-  }, 450);
+  }, Number(slider.value) < TEST_CUTOFF ? 250 : 600);
 });
 slider.addEventListener("input", render);
 scenarioSelect.addEventListener("change", render);
@@ -377,14 +423,14 @@ document.getElementById("outline").addEventListener("change", render);
 document.getElementById("zonesButton").addEventListener("click", (event) => {
   showZones = !showZones;
   event.target.setAttribute("aria-pressed", String(showZones));
-  document.getElementById("zonesLegend").classList.toggle("on", showZones);
+  document.getElementById("zonesLegend").classList.toggle("hidden", !showZones);
   render();
 });
 const themeButton = document.getElementById("theme");
 const isDark = () => css("--dark") === "1";
 function setTheme(theme) {
   if (theme) document.documentElement.setAttribute("data-theme", theme);
-  themeButton.textContent = isDark() ? "\u2600\uFE0F" : "\u{1F319}";
+  themeButton.textContent = isDark() ? "☀️" : "\u{1F319}";
 }
 try { setTheme(localStorage.getItem("theme")); } catch (e) { setTheme(null); }
 themeButton.addEventListener("click", () => {
@@ -393,7 +439,8 @@ themeButton.addEventListener("click", () => {
   try { localStorage.setItem("theme", next); } catch (e) {}
   render();
 });
-window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { setTheme(null); render(); });
+slider.min = DATA.first_year_min; slider.max = END; slider.value = LAST_OBSERVED;
 render();
 </script>
 </body>

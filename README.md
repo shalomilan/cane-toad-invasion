@@ -10,6 +10,13 @@
 3. Model habitat suitability with spatially blocked cross-validation.
 4. Forecast the front and validate with a temporal backtest (train up to 2015, predict 2016–2025).
 
+## What the forecast means
+The target is the **probability that toads are present** in each 25 km cell, not the probability that someone records them. Records are presence × detection: a cell can host toads for years before anyone reports one, especially where few people look for frogs. The model therefore has two parts: *arrival* of toads and *detection* given survey effort (an occupancy approach with imperfect detection, MacKenzie et al. 2002, 2003).
+
+## Assumptions
+- **Once toads arrive in a cell, they stay.** No local extinction is modelled. Reasonable in the humid tropics; it may fail at the arid margins, where populations can die out in droughts and recolonise later.
+- Survey effort is measured by the records of other amphibian species in the same cell and year.
+
 ## Reproduce
 ```bash
 uv sync

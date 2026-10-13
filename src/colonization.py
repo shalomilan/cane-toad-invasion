@@ -57,9 +57,10 @@ def cell_year_table(cells: pd.DataFrame, suitability: np.ndarray, years) -> pd.D
 
 
 def simulate(model, cells: pd.DataFrame, suitability: np.ndarray, last_observed_year: int,
-             years, n_runs: int, features=FEATURES, seed: int = 0) -> np.ndarray:
+             years, n_runs: int, features=FEATURES, seed: int = 0, extra_features=None) -> np.ndarray:
     """Monte Carlo forward simulation from the occupancy observed up to `last_observed_year`.
 
+    `extra_features(year)` optionally returns more predictors for every cell in that year (same row order as `cells`).
     Returns the simulated first-occupation year of every cell, shape (n_runs, n_cells); np.inf = never.
     """
     rng = np.random.default_rng(seed)
@@ -73,6 +74,8 @@ def simulate(model, cells: pd.DataFrame, suitability: np.ndarray, last_observed_
             at_risk = np.isinf(first_year)
             table = spatial_features(xy_km, first_year, year)
             table["suitability_logit"] = suit_logit
+            if extra_features is not None:
+                table = table.join(extra_features(year).reset_index(drop=True))
             probability = model.predict_proba(table.loc[at_risk, list(features)])[:, 1]
             colonised = np.flatnonzero(at_risk)[rng.random(at_risk.sum()) < probability]
             first_year[colonised] = year
