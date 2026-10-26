@@ -128,3 +128,15 @@ def download_gbif_native_range(overwrite: bool = False) -> Path:
 if __name__ == "__main__":
     download_occurrences()
     download_australia_outline()
+
+
+HYDROLOGY_POINTS_URL = "https://d28rz98at9flks.cloudfront.net/83149/SurfaceHydrologyPointsNational.gdb.zip"
+HYDROLOGY_POINTS_ZIP = RAW_DIR / "SurfaceHydrologyPointsNational.gdb.zip"
+
+
+def download_hydrology_points(overwrite: bool = False) -> Path:
+    """Geoscience Australia, Surface Hydrology Points (National), CC BY 4.0: bores, dams, tanks, pools, springs."""
+    if not HYDROLOGY_POINTS_ZIP.exists() or overwrite:
+        urllib.request.urlretrieve(HYDROLOGY_POINTS_URL, HYDROLOGY_POINTS_ZIP)
+    print(f"Hydrology points: {HYDROLOGY_POINTS_ZIP.name}")
+    return HYDROLOGY_POINTS_ZIP
