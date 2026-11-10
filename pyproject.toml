@@ -1,7 +1,7 @@
 [project]
 name = "cane-toad-invasion"
 version = "0.1.0"
-description = "Add your description here"
+description = "Forecasting where invasive cane toads are, separating records from presence"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

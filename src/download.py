@@ -140,3 +140,18 @@ def download_hydrology_points(overwrite: bool = False) -> Path:
         urllib.request.urlretrieve(HYDROLOGY_POINTS_URL, HYDROLOGY_POINTS_ZIP)
     print(f"Hydrology points: {HYDROLOGY_POINTS_ZIP.name}")
     return HYDROLOGY_POINTS_ZIP
+
+
+ENVIRONMENT_LAYERS = {
+    "wc2.1_10m_bio.zip": "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip",
+    "wc2.1_10m_elev.zip": "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_elev.zip",
+    "HydroRIVERS_v10_au_shp.zip": "https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_au_shp.zip",
+}
+
+
+def download_environment_layers(overwrite: bool = False) -> None:
+    """WorldClim 2.1 (10 arc-min bioclimatic variables and elevation) and HydroRIVERS v1.0 for Australasia."""
+    for name, url in ENVIRONMENT_LAYERS.items():
+        if not (RAW_DIR / name).exists() or overwrite:
+            urllib.request.urlretrieve(url, RAW_DIR / name)
+        print(f"Environment layer: {name}")

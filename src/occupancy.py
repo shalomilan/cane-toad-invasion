@@ -89,16 +89,22 @@ class ArrivalLikelihood:
     `log_detection` for every row.
     """
 
-    def __init__(self, table: pd.DataFrame, features, cell_weights: pd.Series | None = None):
+    def __init__(self, table: pd.DataFrame, features, cell_weights: pd.Series | None = None,
+                 standardise_like: LogisticFit | None = None):
+        """`standardise_like` reuses the scaling of an existing fit, to apply its coefficients to another table."""
         table = table.sort_values(["cell", "year"], kind="stable").reset_index(drop=True)
         self.features = list(features)
         cells, starts = np.unique(table["cell"].to_numpy(), return_index=True)
         self.cells, self.starts = cells, starts
+        self.row_years = table["year"].to_numpy()
         self.ends = np.r_[starts[1:], len(table)] - 1
         self.recorded = table["colonised"].to_numpy()[self.ends] == 1
         self.weights = np.ones(len(cells)) if cell_weights is None else cell_weights.reindex(cells).fillna(0).to_numpy()
         row_weights = np.repeat(self.weights, self.ends - self.starts + 1)
-        self.mean, self.scale = _standardise(table, self.features, row_weights)
+        if standardise_like is None:
+            self.mean, self.scale = _standardise(table, self.features, row_weights)
+        else:
+            self.mean, self.scale = standardise_like.mean, standardise_like.scale
         self.z = (table[self.features].to_numpy(dtype=float) - self.mean) / self.scale
         log1m_d = table["log1m_detection"].to_numpy()
         self.log_detection_last = table["log_detection"].to_numpy()[self.ends]
@@ -135,6 +141,28 @@ class ArrivalLikelihood:
 
         result = minimize(negative, np.r_[-5.0, np.zeros(len(self.features))], method="L-BFGS-B")
         return LogisticFit(self.features, self.mean, self.scale, result.x)
+
+    def presence_by_year(self, fit: LogisticFit, years) -> pd.DataFrame:
+        """P(toads had arrived by year t | the cell's whole record history), for every cell and year.
+
+        A reconstruction with hindsight: a first record in 2018 also informs where toads probably were in 2014.
+        Rows follow `self.cells`; a recorded cell is present from its first record onwards.
+        """
+        loglik, _ = self.per_cell(fit.coef)
+        eta = fit.coef[0] + self.z @ fit.coef[1:]
+        lengths = self.ends - self.starts + 1
+        after_arrival = np.where(self.recorded, self.log_detection_last + self.d_excl_last, self.d_total)
+        log_weight = (log_expit(eta) + self._cumsum_exclusive(log_expit(-eta)) - self.d_excl
+                      + np.repeat(after_arrival - loglik, lengths))
+        cumulative = np.cumsum(np.exp(log_weight))
+        by_row = cumulative - np.repeat(np.r_[0, cumulative[self.starts[1:] - 1]], lengths)
+        first_year = self.row_years[self.starts]
+        columns = {}
+        for year in years:
+            offset = np.minimum(year - first_year, lengths - 1)
+            arrived = np.where(offset >= 0, by_row[self.starts + np.maximum(offset, 0)], 0.0)
+            columns[year] = np.clip(arrived, 0, 1)
+        return pd.DataFrame(columns, index=self.cells)
 
     def presence_posterior(self, fit: LogisticFit) -> pd.Series:
         """P(toads present at the end | the cell's record history): 1 for recorded cells."""

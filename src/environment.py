@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import rasterio
 
-from download import download_australia_outline
+from download import download_australia_outline, download_environment_layers
 from front import AUSTRALIAN_ALBERS
 
 RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
@@ -110,6 +110,7 @@ def environmental_grid(cell_size_m: float, overwrite: bool = False) -> pd.DataFr
     if cache.exists() and not overwrite:
         return pd.read_csv(cache)
 
+    download_environment_layers()
     grid = add_climate(australia_grid(cell_size_m))
     grid["distance_to_river_km"] = distance_to_rivers_km(grid)
 
