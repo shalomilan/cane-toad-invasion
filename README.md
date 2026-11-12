@@ -6,7 +6,7 @@ Biodiversity records show where people looked, not where species live. This proj
 
 ![Reality vs model, 1935–2035](figures/06_reality_vs_model.gif)
 
-*Left: reality, the 25-km cells with at least one toad record by each year. Right: the model, the probability that toads are present, recorded or not, from a single model fitted with all records up to 2025: a reconstruction with hindsight for 1935–2025 and the forecast from 2026. Its predictive skill was tested separately, on years it never saw (see validation below).*
+*Left: reality, the 25-km cells with at least one toad record by each year. Right: the model, the probability that toads are present, recorded or not, from a single model fitted with all records up to 2025: a reconstruction with hindsight for 1935–2025 and the forecast from 2026. Its predictive skill was tested separately, on years it never saw (see validation below). Before 1990 the reconstruction is an extrapolation: the arrival and detection models are fitted on 1990–2025, and survey effort in the early decades was very low, so the early maps are the least reliable part of the figure.*
 
 > Exploratory analysis, not peer-reviewed. All data are public and every number comes from the notebooks in this repository.
 
